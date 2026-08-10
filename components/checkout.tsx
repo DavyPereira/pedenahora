@@ -45,7 +45,17 @@ const fmtPct = (v: number) => `${v.toLocaleString("pt-BR", { minimumFractionDigi
 const TOTAL_STEPS = 4;
 
 type PaymentMethod = "pix" | "cash" | "card";
+type DeliveryMethod = "delivery" | "pickup";
 type Direction = "forward" | "back";
+
+// Retirada na loja: por enquanto só a Lolo Cookies oferece essa opção, com endereço fixo.
+const PICKUP_ENABLED_SLUGS = ["lolocookies"];
+const PICKUP_ADDRESS = {
+  street: "Rua Eufrásio Carneiro",
+  number: "201",
+  neighborhood: "Cruzeiro",
+};
+const PICKUP_ADDRESS_LINE = `${PICKUP_ADDRESS.street}, ${PICKUP_ADDRESS.number} - ${PICKUP_ADDRESS.neighborhood}`;
 
 const addressSchema = z.object({
   cep: z
@@ -105,6 +115,7 @@ type CheckoutDraft = {
   selectedAddressId: string | null;
   useNewAddress: boolean;
   address: AddressForm;
+  deliveryMethod: DeliveryMethod;
   payment: PaymentMethod;
   change: string;
   installments: number;
@@ -118,6 +129,7 @@ const INITIAL_DRAFT: CheckoutDraft = {
   selectedAddressId: null,
   useNewAddress: false,
   address: EMPTY_ADDRESS,
+  deliveryMethod: "delivery",
   payment: "pix",
   change: "",
   installments: 1,
@@ -215,6 +227,10 @@ export function Checkout({
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [saving, startSaving] = useTransition();
 
+  const pickupAvailable = PICKUP_ENABLED_SLUGS.includes(slug);
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(() => draft.deliveryMethod ?? "delivery");
+  const isPickup = pickupAvailable && deliveryMethod === "pickup";
+
   const {
     control: identityControl,
     handleSubmit: handleIdentitySubmit,
@@ -253,6 +269,7 @@ export function Checkout({
     installments: number;
     installmentPct: number;
     cardAdjusted: boolean;
+    isPickup: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -272,25 +289,27 @@ export function Checkout({
   const priceForEntry = (entry: CartEntry) =>
     usesCardPricing ? (entry.cardPrice ?? entry.price) * installmentMultiplier : entry.price;
   const cartTotalForPayment = cart.reduce((s, e) => s + priceForEntry(e) * e.quantity, 0);
-  const orderTotalForPayment = cartTotalForPayment + delivery;
+  const effectiveDelivery = isPickup ? 0 : delivery;
+  const orderTotalForPayment = cartTotalForPayment + effectiveDelivery;
 
   const basePriceCartTotal = cart.reduce((s, e) => s + e.price * e.quantity, 0);
   const baseCardCartTotal = cart.reduce((s, e) => s + (e.cardPrice ?? e.price) * e.quantity, 0);
   const totalForInstallments = (n: number) => {
-    if (n <= FREE_INSTALLMENTS) return basePriceCartTotal + delivery;
+    if (n <= FREE_INSTALLMENTS) return basePriceCartTotal + effectiveDelivery;
     const pct = INSTALLMENT_INTEREST_PCT[n] ?? 0;
-    return baseCardCartTotal * (1 + pct / 100) + delivery;
+    return baseCardCartTotal * (1 + pct / 100) + effectiveDelivery;
   };
 
   const displayCart = sentSummary?.cart ?? cart.map((e) => ({ ...e, price: priceForEntry(e) }));
   const displayCartCount = displayCart.reduce((s, i) => s + i.quantity, 0);
   const displayCartTotal = sentSummary?.cartTotal ?? cartTotalForPayment;
-  const displayDelivery = sentSummary?.delivery ?? delivery;
+  const displayDelivery = sentSummary?.delivery ?? effectiveDelivery;
   const displayOrderTotal = sentSummary?.orderTotal ?? orderTotalForPayment;
   const displayInstallments = sentSummary?.installments ?? installments;
   const displayInstallmentPct = sentSummary?.installmentPct ?? installmentPct;
   const displayInstallmentValue = displayOrderTotal / displayInstallments;
   const displayCardAdjusted = sentSummary?.cardAdjusted ?? isCardAdjusted;
+  const displayIsPickup = sentSummary?.isPickup ?? isPickup;
 
   useEffect(() => {
     setDraft({
@@ -301,12 +320,13 @@ export function Checkout({
       selectedAddressId,
       useNewAddress,
       address,
+      deliveryMethod,
       payment,
       change,
       installments,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, identity.name, identity.phone, lookupResult, selectedAddressId, useNewAddress, address, payment, change, installments]);
+  }, [step, identity.name, identity.phone, lookupResult, selectedAddressId, useNewAddress, address, deliveryMethod, payment, change, installments]);
 
   const effectiveAddress: AddressForm =
     selectedAddressId && lookupResult
@@ -407,20 +427,22 @@ export function Checkout({
         : "Cartão",
     };
 
-    const endereco = acceptsDelivery
-      ? [
-          `${effectiveAddress.street}, ${effectiveAddress.number}${effectiveAddress.complement ? `, ${effectiveAddress.complement}` : ""}`,
-          effectiveAddress.neighborhood,
-          `${effectiveAddress.city}/${effectiveAddress.state}`,
-          `CEP: ${effectiveAddress.cep}`,
-        ].join("\n")
-      : "Retirada no local";
+    const endereco = isPickup
+      ? [`Retirada no local`, PICKUP_ADDRESS_LINE].join("\n")
+      : acceptsDelivery
+        ? [
+            `${effectiveAddress.street}, ${effectiveAddress.number}${effectiveAddress.complement ? `, ${effectiveAddress.complement}` : ""}`,
+            effectiveAddress.neighborhood,
+            `${effectiveAddress.city}/${effectiveAddress.state}`,
+            `CEP: ${effectiveAddress.cep}`,
+          ].join("\n")
+        : "Retirada no local";
 
     const message = renderWhatsAppTemplate(whatsappMessageTemplate, {
       loja: storeName,
       itens,
       subtotal: fmt(cartTotalForPayment),
-      entrega: acceptsDelivery ? (delivery === 0 ? "Grátis 🎉" : fmt(delivery)) : "Retirada no local",
+      entrega: isPickup ? "Retirada no local" : acceptsDelivery ? (effectiveDelivery === 0 ? "Grátis 🎉" : fmt(effectiveDelivery)) : "Retirada no local",
       total: fmt(orderTotalForPayment),
       pagamento: paymentLabels[payment],
       endereco,
@@ -447,8 +469,8 @@ export function Checkout({
           storeId: settings.id,
           name: identity.name ?? "",
           phone: (identity.phone ?? "").replace(/\D/g, ""),
-          address: acceptsDelivery ? effectiveAddress : undefined,
-          saveNewAddress: acceptsDelivery && !selectedAddressId ? address : undefined,
+          address: acceptsDelivery && !isPickup ? effectiveAddress : undefined,
+          saveNewAddress: acceptsDelivery && !isPickup && !selectedAddressId ? address : undefined,
           items: cart.map((entry) => ({
             name: entry.name,
             quantity: entry.quantity,
@@ -456,7 +478,7 @@ export function Checkout({
           })),
           stockItems: cart.map((entry) => ({ productId: entry.id, quantity: entry.quantity })),
           subtotal: cartTotalForPayment,
-          deliveryFee: delivery,
+          deliveryFee: effectiveDelivery,
           total: orderTotalForPayment,
           paymentMethod: payment,
           paymentNote: payment === "cash" && change.trim() ? change.trim() : undefined,
@@ -488,11 +510,12 @@ export function Checkout({
       setSentSummary({
         cart: cart.map((entry) => ({ ...entry, price: priceForEntry(entry) })),
         cartTotal: cartTotalForPayment,
-        delivery,
+        delivery: effectiveDelivery,
         orderTotal: orderTotalForPayment,
         installments,
         installmentPct,
         cardAdjusted: isCardAdjusted,
+        isPickup,
       });
       clearCart();
       setSent(true);
@@ -652,14 +675,86 @@ export function Checkout({
         {step === 2 && acceptsDelivery && (
           <div key="step-2" className={animClass}>
             <StepTitle
-              title="Onde entregamos?"
+              title={isPickup ? "Retirar na loja" : "Onde entregamos?"}
               subtitle={
-                showAddressList
-                  ? "Escolha um endereço salvo ou cadastre um novo."
-                  : "Informe seu endereço para calcularmos o frete."
+                isPickup
+                  ? "Confira o endereço para retirada do seu pedido."
+                  : showAddressList
+                    ? "Escolha um endereço salvo ou cadastre um novo."
+                    : "Informe seu endereço para calcularmos o frete."
               }
             />
 
+            {pickupAvailable && (
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setDeliveryMethod("delivery")}
+                  className="relative w-full p-4 rounded-2xl border-2 flex flex-col items-center gap-2 text-center transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  style={
+                    !isPickup
+                      ? { backgroundColor: "var(--primary)", borderColor: "var(--primary)" }
+                      : { borderColor: "var(--border)", backgroundColor: "var(--card)" }
+                  }
+                >
+                  <Truck className="w-5 h-5" style={{ color: !isPickup ? "white" : "var(--muted-foreground)" }} />
+                  <span
+                    className="font-heading font-bold text-sm"
+                    style={{ color: !isPickup ? "white" : "var(--foreground)" }}
+                  >
+                    Entrega
+                  </span>
+                </button>
+                <button
+                  onClick={() => setDeliveryMethod("pickup")}
+                  className="relative w-full p-4 rounded-2xl border-2 flex flex-col items-center gap-2 text-center transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  style={
+                    isPickup
+                      ? { backgroundColor: "var(--primary)", borderColor: "var(--primary)" }
+                      : { borderColor: "var(--border)", backgroundColor: "var(--card)" }
+                  }
+                >
+                  <MapPinned className="w-5 h-5" style={{ color: isPickup ? "white" : "var(--muted-foreground)" }} />
+                  <span
+                    className="font-heading font-bold text-sm"
+                    style={{ color: isPickup ? "white" : "var(--foreground)" }}
+                  >
+                    Retirar na loja
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {isPickup ? (
+              <>
+                <div
+                  className="mt-6 rounded-3xl p-5"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--primary) 12%, var(--card))" }}
+                >
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: "var(--primary)" }}
+                    >
+                      <MapPinned className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-heading font-bold text-sm">Endereço para retirada</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {PICKUP_ADDRESS_LINE}
+                  </p>
+                  <p className="mt-2 text-sm font-bold" style={{ color: "var(--primary)" }}>
+                    ✓ Sem taxa de entrega
+                  </p>
+                </div>
+
+                <div className="mt-8">
+                  <ActionButton color="var(--primary)" onClick={() => goTo(3)}>
+                    Continuar <ArrowRight className="w-4 h-4" />
+                  </ActionButton>
+                </div>
+              </>
+            ) : (
+              <>
             {/* Delivery fee card */}
             <div
               className="mt-6 rounded-3xl p-5"
@@ -895,6 +990,8 @@ export function Checkout({
                     </p>
                   )}
                 </div>
+              </>
+            )}
               </>
             )}
           </div>
@@ -1138,7 +1235,28 @@ export function Checkout({
                 </p>
               </div>
 
-              {acceptsDelivery ? (
+              {isPickup ? (
+                <div className="bg-card border-2 border-border rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5" style={{ color: "var(--primary)" }} />
+                      <span className="font-heading font-bold text-xs">Retirada</span>
+                    </div>
+                    <button
+                      onClick={() => goTo(2)}
+                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-foreground font-semibold leading-snug">
+                    {PICKUP_ADDRESS.street}, {PICKUP_ADDRESS.number}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+                    {PICKUP_ADDRESS.neighborhood}
+                  </p>
+                </div>
+              ) : acceptsDelivery ? (
                 <div className="bg-card border-2 border-border rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
@@ -1222,7 +1340,7 @@ export function Checkout({
                       className="font-semibold"
                       style={{ color: displayDelivery === 0 ? "var(--primary)" : "var(--foreground)" }}
                     >
-                      {displayDelivery === 0 ? "Grátis 🎉" : fmt(displayDelivery)}
+                      {displayIsPickup ? "Retirada no local" : displayDelivery === 0 ? "Grátis 🎉" : fmt(displayDelivery)}
                     </span>
                   </div>
                 )}

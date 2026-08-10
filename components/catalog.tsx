@@ -34,6 +34,8 @@ import type { BusinessHourDayDTO } from "@/lib/types";
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const HORIZONTAL_CARD_LAYOUT_SLUGS = ["lolocookies"];
+
 function CookieCard({
   cookie,
   quantity,
@@ -158,6 +160,125 @@ function CookieCard({
             </div>
           )}
         </div>
+      </div>
+    </article>
+  );
+}
+
+function CookieCardHorizontal({
+  cookie,
+  quantity,
+  index,
+  onAdd,
+  onRemove,
+  disabled,
+  acceptsInstallments,
+}: {
+  cookie: CookieItem;
+  quantity: number;
+  index: number;
+  onAdd: () => void;
+  onRemove: () => void;
+  disabled?: boolean;
+  acceptsInstallments: boolean;
+}) {
+  const isTracked = cookie.stockQuantity !== null;
+  const isSoldOut = isTracked && cookie.stockQuantity! <= 0;
+  const atMaxStock = isTracked && quantity >= cookie.stockQuantity!;
+
+  return (
+    <article
+      className="flex items-start gap-4 py-5"
+      style={{
+        animation: `card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.07}s both`,
+      }}
+    >
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
+        <div>
+          <h3 className="font-heading text-base sm:text-lg font-bold leading-tight tracking-tight text-foreground">
+            {cookie.name}
+          </h3>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground line-clamp-2">
+            {cookie.description}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 mt-auto pt-1">
+          <div>
+            <span className="font-heading text-lg font-extrabold text-foreground tracking-tight">
+              {fmt(cookie.price)}
+            </span>
+            {acceptsInstallments && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Parcele no cartão
+              </p>
+            )}
+          </div>
+
+          {isSoldOut ? null : quantity === 0 ? (
+            <Button
+              size="sm"
+              onClick={onAdd}
+              disabled={disabled}
+              className="rounded-full h-8 px-3.5 gap-1 text-xs font-semibold active:scale-95 transition-transform shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-3 h-3" />
+              Adicionar
+            </Button>
+          ) : (
+            <div className="flex items-center gap-1 bg-secondary rounded-full p-1 shrink-0">
+              <button
+                onClick={onRemove}
+                className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-border transition-colors cursor-pointer active:scale-90"
+                aria-label="Remover um"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <span className="font-heading text-sm font-bold w-4 text-center select-none tabular-nums">
+                {quantity}
+              </span>
+              <button
+                onClick={onAdd}
+                disabled={disabled || atMaxStock}
+                className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-all cursor-pointer active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Adicionar um"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0 rounded-2xl flex items-center justify-center overflow-hidden"
+        style={{ backgroundColor: cookie.visual.bg }}
+      >
+        {cookie.imageUrl ? (
+          <Image
+            src={cookie.imageUrl}
+            alt={cookie.name}
+            fill
+            sizes="(min-width: 640px) 128px, 112px"
+            className="object-cover"
+          />
+        ) : (
+          <span className="text-4xl select-none drop-shadow-md">
+            {cookie.visual.emoji}
+          </span>
+        )}
+
+        {quantity > 0 && (
+          <div className="absolute top-1.5 right-1.5 bg-primary text-primary-foreground text-[10px] font-heading font-bold px-1.5 py-0.5 rounded-full shadow-md">
+            {quantity}×
+          </div>
+        )}
+
+        {isSoldOut && (
+          <div className="absolute top-1.5 left-1.5 bg-foreground/90 text-background text-[10px] font-heading font-bold px-1.5 py-0.5 rounded-full shadow-md">
+            Esgotado
+          </div>
+        )}
       </div>
     </article>
   );
@@ -295,6 +416,7 @@ export function Catalog({
   }, [products, search, category]);
 
   const getQty = (id: string) => cart.find((i) => i.id === id)?.quantity ?? 0;
+  const horizontalCards = HORIZONTAL_CARD_LAYOUT_SLUGS.includes(slug);
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
@@ -529,6 +651,21 @@ export function Catalog({
             >
               Limpar filtros
             </Button>
+          </div>
+        ) : horizontalCards ? (
+          <div className="flex flex-col divide-y divide-border">
+            {filtered.map((cookie, index) => (
+              <CookieCardHorizontal
+                key={cookie.id}
+                cookie={cookie}
+                quantity={getQty(cookie.id)}
+                index={index}
+                onAdd={() => addToCart(cookie)}
+                onRemove={() => removeFromCart(cookie.id)}
+                disabled={isClosed || (cookie.stockQuantity !== null && cookie.stockQuantity <= 0)}
+                acceptsInstallments={acceptsInstallments}
+              />
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
