@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/session-helpers";
 import { uploadImageToR2, deleteImageFromR2 } from "@/lib/r2";
+import { processImageForUpload } from "@/lib/image";
 
 const productSchema = z.object({
   name: z.string().trim().min(1, "Nome é obrigatório"),
@@ -41,15 +42,15 @@ export async function uploadProductImage(formData: FormData): Promise<UploadImag
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "Selecione uma imagem" };
 
-  const ext = ALLOWED_IMAGE_TYPES[file.type];
-  if (!ext) return { error: "Formato inválido. Use JPG, PNG ou WEBP." };
+  if (!ALLOWED_IMAGE_TYPES[file.type]) return { error: "Formato inválido. Use JPG, PNG ou WEBP." };
   if (file.size > MAX_IMAGE_SIZE) return { error: "Imagem muito grande (máx. 5MB)" };
 
-  const key = `products/${admin.storeId}/${crypto.randomUUID()}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-
   try {
-    const url = await uploadImageToR2(key, buffer, file.type);
+    const { buffer, contentType, ext } = await processImageForUpload(
+      Buffer.from(await file.arrayBuffer())
+    );
+    const key = `products/${admin.storeId}/${crypto.randomUUID()}.${ext}`;
+    const url = await uploadImageToR2(key, buffer, contentType);
     return { url };
   } catch {
     return { error: "Erro ao enviar imagem" };

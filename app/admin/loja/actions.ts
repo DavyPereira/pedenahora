@@ -7,6 +7,7 @@ import { storeSettingsSchema, type StoreSettingsFormData } from "@/lib/schemas/s
 import { businessHoursSchema, type BusinessHoursFormData } from "@/lib/schemas/business-hours";
 import { getTodayDateInStoreTimezone } from "@/lib/business-hours-status";
 import { uploadImageToR2, deleteImageFromR2 } from "@/lib/r2";
+import { processImageForUpload } from "@/lib/image";
 
 export type SettingsInput = StoreSettingsFormData;
 export type SettingsActionState = { error?: string };
@@ -26,15 +27,15 @@ export async function uploadStoreLogo(formData: FormData): Promise<UploadLogoSta
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "Selecione uma imagem" };
 
-  const ext = ALLOWED_LOGO_TYPES[file.type];
-  if (!ext) return { error: "Formato inválido. Use JPG, PNG ou WEBP." };
+  if (!ALLOWED_LOGO_TYPES[file.type]) return { error: "Formato inválido. Use JPG, PNG ou WEBP." };
   if (file.size > MAX_LOGO_SIZE) return { error: "Imagem muito grande (máx. 5MB)" };
 
-  const key = `logos/${admin.storeId}/${crypto.randomUUID()}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-
   try {
-    const url = await uploadImageToR2(key, buffer, file.type);
+    const { buffer, contentType, ext } = await processImageForUpload(
+      Buffer.from(await file.arrayBuffer())
+    );
+    const key = `logos/${admin.storeId}/${crypto.randomUUID()}.${ext}`;
+    const url = await uploadImageToR2(key, buffer, contentType);
     return { url };
   } catch {
     return { error: "Erro ao enviar imagem" };

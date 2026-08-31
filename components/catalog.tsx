@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, createElement } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import {
   ShoppingCart,
@@ -11,6 +12,7 @@ import {
   X,
   ArrowRight,
   Receipt,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +37,7 @@ const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const HORIZONTAL_CARD_LAYOUT_SLUGS = ["lolocookies"];
+const NATIONWIDE_SHIPPING_SLUGS = ["dakela-moda-intima"];
 
 function CookieCard({
   cookie,
@@ -417,6 +420,7 @@ export function Catalog({
 
   const getQty = (id: string) => cart.find((i) => i.id === id)?.quantity ?? 0;
   const horizontalCards = HORIZONTAL_CARD_LAYOUT_SLUGS.includes(slug);
+  const shipsNationwide = NATIONWIDE_SHIPPING_SLUGS.includes(slug);
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
@@ -436,7 +440,7 @@ export function Catalog({
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
-          <a href={`/${slug}`} className="flex items-center gap-2 shrink-0" aria-label={storeName}>
+          <Link href={`/${slug}`} className="flex items-center gap-2 shrink-0" aria-label={storeName}>
             {storeIcon}
             <span
               className="hidden sm:inline font-heading text-xl font-bold tracking-tight"
@@ -444,7 +448,7 @@ export function Catalog({
             >
               {storeName}
             </span>
-          </a>
+          </Link>
 
           <div className="flex-1 max-w-lg mx-auto relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -573,6 +577,15 @@ export function Catalog({
           </span>
           <span className="w-px h-4 bg-border hidden sm:block" />
           <span className="hidden sm:block">Entrega grátis acima de {fmt(freeDeliveryThreshold)}</span>
+          {shipsNationwide && (
+            <>
+              <span className="w-px h-4 bg-border hidden sm:block" />
+              <span className="flex items-center gap-1.5">
+                <Truck className="w-4 h-4 shrink-0" style={{ color: "var(--primary)" }} />
+                Enviamos para todo o Brasil
+              </span>
+            </>
+          )}
         </div>
       </section>
 

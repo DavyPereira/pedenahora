@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef, useTransition, createElement } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1433,12 +1434,12 @@ function CheckoutHeader({
           <ArrowLeft className="w-4 h-4" />
         </button>
 
-        <a href={`/${slug}`} className="flex items-center gap-2" aria-label={storeName}>
+        <Link href={`/${slug}`} className="flex items-center gap-2" aria-label={storeName}>
           {storeIcon}
           <span className="font-heading text-lg font-bold tracking-tight" style={{ color: "var(--primary)" }}>
             {storeName}
           </span>
-        </a>
+        </Link>
 
         {step > 0 ? (
           <span className="font-heading text-sm font-bold text-muted-foreground tabular-nums">
