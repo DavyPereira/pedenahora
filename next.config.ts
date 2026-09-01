@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // sharp usa binários nativos (.node/.so) carregados via dlopen, não via
+  // require/import — se o Turbopack tentar empacotar o módulo, ele perde o
+  // rastro do libvips-cpp.so e a função serverless quebra em produção com
+  // ERR_DLOPEN_FAILED. Marcando como externo, a própria Vercel rastreia e
+  // inclui os binários nativos corretamente.
+  serverExternalPackages: ["sharp"],
   experimental: {
     serverActions: {
       bodySizeLimit: "6mb",
