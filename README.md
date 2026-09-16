@@ -55,3 +55,8 @@ Supabase.
 - `npm run lint` — ESLint
 - `npx tsx scripts/reoptimize-images.ts [--dry-run]` — reprocessa imagens já
   hospedadas no R2 (resize + WebP), útil após mudanças na pipeline de upload
+
+
+  ### GitHub Achievements
+
+Experimentando o fluxo de Pull Requests do GitHub.
