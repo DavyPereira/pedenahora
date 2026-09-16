@@ -57,6 +57,6 @@ Supabase.
   hospedadas no R2 (resize + WebP), útil após mudanças na pipeline de upload
 
 
-  ### GitHub Achievements
+### GitHub Achievements
 
-Experimentando o fluxo de Pull Requests do GitHub.
+Testando o fluxo de Pull Requests e contribuições do GitHub.
