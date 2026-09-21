@@ -417,7 +417,10 @@ export function Checkout({
 
   const buildMessage = () => {
     const itens = cart
-      .map((entry) => `• ${entry.quantity}× ${entry.name}: ${fmt(priceForEntry(entry) * entry.quantity)}`)
+      .map((entry) => {
+        const base = `• ${entry.quantity}× ${entry.name}: ${fmt(priceForEntry(entry) * entry.quantity)}`;
+        return entry.extras.length > 0 ? `${base}\n   + ${entry.extras.join(", ")}` : base;
+      })
       .join("\n");
 
     const paymentLabels: Record<PaymentMethod, string> = {
@@ -473,7 +476,7 @@ export function Checkout({
           address: acceptsDelivery && !isPickup ? effectiveAddress : undefined,
           saveNewAddress: acceptsDelivery && !isPickup && !selectedAddressId ? address : undefined,
           items: cart.map((entry) => ({
-            name: entry.name,
+            name: entry.extras.length > 0 ? `${entry.name} (${entry.extras.join(", ")})` : entry.name,
             quantity: entry.quantity,
             unitPrice: priceForEntry(entry),
           })),
@@ -1203,7 +1206,10 @@ export function Checkout({
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="font-heading font-bold text-sm truncate">{entry.name}</p>
-                      <p className="text-xs text-muted-foreground">{entry.quantity}× {fmt(entry.price)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {entry.quantity}× {fmt(entry.price)}
+                        {entry.extras.length > 0 && <> · {entry.extras.join(", ")}</>}
+                      </p>
                     </div>
                     <span className="font-heading font-bold text-sm shrink-0">
                       {fmt(entry.price * entry.quantity)}

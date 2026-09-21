@@ -11,8 +11,10 @@ import {
   Minus,
   X,
   ArrowRight,
+  ArrowLeft,
   Receipt,
   Truck,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,13 +33,20 @@ import {
   type BusinessHoursStatus,
 } from "@/lib/business-hours-status";
 import { getStoreEmoji, getStoreIcon } from "@/lib/store-icons";
+import {
+  getStoreOrderExtras,
+  calcExtrasFee,
+  FREE_EXTRAS_LIMIT,
+  EXTRA_FEE,
+  type StoreExtraOption,
+} from "@/lib/order-extras";
 import type { BusinessHourDayDTO } from "@/lib/types";
 
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const HORIZONTAL_CARD_LAYOUT_SLUGS = ["lolocookies"];
-const NATIONWIDE_SHIPPING_SLUGS = ["dakela-moda-intima"];
+const NATIONWIDE_SHIPPING_SLUGS: string[] = [];
 
 function CookieCard({
   cookie,
@@ -317,7 +326,10 @@ function CartItemRow({
         <p className="font-heading text-base font-bold leading-tight truncate">
           {entry.name}
         </p>
-        <p className="text-sm text-muted-foreground mb-2">{fmt(entry.price)} cada</p>
+        <p className="text-sm text-muted-foreground mb-2">
+          {fmt(entry.price)} cada
+          {entry.extras.length > 0 && <> · {entry.extras.join(", ")}</>}
+        </p>
 
         <div className="flex items-center gap-1.5">
           <button
@@ -344,6 +356,134 @@ function CartItemRow({
       >
         <X className="w-3 h-3" />
       </button>
+    </div>
+  );
+}
+
+function StoreExtraStep({
+  cookie,
+  storeName,
+  brandIcon,
+  options,
+  selected,
+  onToggle,
+  onBack,
+  onConfirm,
+}: {
+  cookie: CookieItem;
+  storeName: string;
+  brandIcon?: string;
+  options: StoreExtraOption[];
+  selected: string[];
+  onToggle: (label: string) => void;
+  onBack: () => void;
+  onConfirm: () => void;
+}) {
+  const extrasFee = calcExtrasFee(selected.length);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      <header className="sticky top-0 z-10 bg-background border-b border-border">
+        <div className="max-w-md sm:max-w-xl md:max-w-2xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
+          <button
+            onClick={onBack}
+            className="w-10 h-10 rounded-xl flex items-center justify-center border-2 border-border hover:border-foreground transition-colors cursor-pointer active:scale-95"
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+
+          <span className="flex items-center gap-2">
+            {createElement(getStoreIcon(brandIcon), { className: "w-5 h-5", style: { color: "var(--primary)" } })}
+            <span className="font-heading text-lg font-bold tracking-tight" style={{ color: "var(--primary)" }}>
+              {storeName}
+            </span>
+          </span>
+
+          <div className="w-10" aria-hidden />
+        </div>
+      </header>
+
+      <main className="flex-1 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto px-5 md:px-8 py-8 overflow-y-auto">
+        <div className="animate-step-forward">
+          <h1 className="font-heading text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+            Adicionais
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Quer algum acompanhamento no {cookie.name}? É opcional.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Os 2 primeiros são grátis. A partir do 3º, cada adicional custa +{fmt(EXTRA_FEE)}.
+          </p>
+
+          <div className="mt-6 flex flex-col gap-2.5">
+            {options.map((extra) => {
+              const checked = selected.includes(extra.label);
+              const isPaid = checked && selected.indexOf(extra.label) >= FREE_EXTRAS_LIMIT;
+              return (
+                <button
+                  key={extra.label}
+                  type="button"
+                  onClick={() => onToggle(extra.label)}
+                  aria-pressed={checked}
+                  className="flex items-center gap-3 rounded-2xl border-2 p-2.5 transition-all cursor-pointer active:scale-[0.98]"
+                  style={{
+                    borderColor: checked ? "var(--primary)" : "var(--border)",
+                    backgroundColor: checked ? "color-mix(in srgb, var(--primary) 8%, transparent)" : "transparent",
+                  }}
+                >
+                  <div
+                    className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden flex items-center justify-center"
+                    style={{ backgroundColor: extra.bg }}
+                  >
+                    {extra.imageUrl ? (
+                      <Image src={extra.imageUrl} alt={extra.label} fill sizes="48px" className="object-cover" />
+                    ) : (
+                      <span className="text-xl select-none">{extra.emoji}</span>
+                    )}
+                  </div>
+                  <span className="flex-1 text-left font-heading text-sm font-bold leading-tight">
+                    {extra.label}
+                    {isPaid && (
+                      <span className="block text-xs font-normal text-muted-foreground mt-0.5">
+                        +{fmt(EXTRA_FEE)}
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className="w-6 h-6 shrink-0 rounded-full border-2 flex items-center justify-center"
+                    style={{
+                      borderColor: checked ? "var(--primary)" : "var(--border)",
+                      backgroundColor: checked ? "var(--primary)" : "transparent",
+                    }}
+                  >
+                    {checked && <Check className="w-3.5 h-3.5 text-primary-foreground stroke-[3]" />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </main>
+
+      <div className="border-t border-border bg-background px-5 md:px-8 py-4">
+        <div className="max-w-md sm:max-w-xl md:max-w-2xl mx-auto flex flex-col gap-2">
+          {extrasFee > 0 && (
+            <p className="text-center text-xs text-muted-foreground">
+              +{selected.length - FREE_EXTRAS_LIMIT} adicional(is) além do limite grátis: +{fmt(extrasFee)}
+            </p>
+          )}
+          <Button
+            onClick={onConfirm}
+            className="w-full h-12 rounded-full font-heading text-base font-bold gap-2 active:scale-[0.98] transition-transform"
+          >
+            {selected.length > 0
+              ? `Adicionar ao carrinho${extrasFee > 0 ? ` (+${fmt(extrasFee)})` : ""}`
+              : "Continuar sem adicionais"}
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -399,7 +539,36 @@ export function Catalog({
     setHoursStatus(getBusinessHoursStatus(businessHours, manuallyClosedDate));
   }, [businessHours, manuallyClosedDate]);
 
-  const { cart, cartCount, cartTotal, delivery, orderTotal, addToCart, removeFromCart, deleteFromCart, clearCart } = useCart();
+  const { cart, cartCount, cartTotal, delivery, orderTotal, addToCart, removeFromCart, removeEntry, deleteEntry, clearCart } = useCart();
+
+  const extrasOptions = useMemo(() => getStoreOrderExtras(slug), [slug]);
+  const [extrasStepCookie, setExtrasStepCookie] = useState<CookieItem | null>(null);
+  const [stepSelectedExtras, setStepSelectedExtras] = useState<string[]>([]);
+
+  const toggleStepExtra = (label: string) =>
+    setStepSelectedExtras((prev) =>
+      prev.includes(label) ? prev.filter((e) => e !== label) : [...prev, label]
+    );
+
+  const handleAdd = (cookie: CookieItem) => {
+    if (extrasOptions.length > 0) {
+      setStepSelectedExtras([]);
+      setExtrasStepCookie(cookie);
+      return;
+    }
+    addToCart(cookie);
+  };
+
+  const closeExtrasStep = () => {
+    setExtrasStepCookie(null);
+    setStepSelectedExtras([]);
+  };
+
+  const confirmExtrasAndAdd = () => {
+    if (!extrasStepCookie) return;
+    addToCart(extrasStepCookie, stepSelectedExtras);
+    closeExtrasStep();
+  };
 
   const isManuallyClosedToday = !!hoursStatus?.isManuallyClosedToday;
   const isClosed = isManuallyClosedToday || (!!hoursStatus?.hasAnyHours && !hoursStatus.isOpenNow);
@@ -418,7 +587,7 @@ export function Catalog({
     );
   }, [products, search, category]);
 
-  const getQty = (id: string) => cart.find((i) => i.id === id)?.quantity ?? 0;
+  const getQty = (id: string) => cart.filter((i) => i.id === id).reduce((s, i) => s + i.quantity, 0);
   const horizontalCards = HORIZONTAL_CARD_LAYOUT_SLUGS.includes(slug);
   const shipsNationwide = NATIONWIDE_SHIPPING_SLUGS.includes(slug);
 
@@ -673,7 +842,7 @@ export function Catalog({
                 cookie={cookie}
                 quantity={getQty(cookie.id)}
                 index={index}
-                onAdd={() => addToCart(cookie)}
+                onAdd={() => handleAdd(cookie)}
                 onRemove={() => removeFromCart(cookie.id)}
                 disabled={isClosed || (cookie.stockQuantity !== null && cookie.stockQuantity <= 0)}
                 acceptsInstallments={acceptsInstallments}
@@ -688,7 +857,7 @@ export function Catalog({
                 cookie={cookie}
                 quantity={getQty(cookie.id)}
                 index={index}
-                onAdd={() => addToCart(cookie)}
+                onAdd={() => handleAdd(cookie)}
                 onRemove={() => removeFromCart(cookie.id)}
                 disabled={isClosed || (cookie.stockQuantity !== null && cookie.stockQuantity <= 0)}
                 acceptsInstallments={acceptsInstallments}
@@ -737,11 +906,11 @@ export function Catalog({
                 <div className="divide-y divide-border">
                   {cart.map((entry) => (
                     <CartItemRow
-                      key={entry.id}
+                      key={`${entry.id}::${entry.extras.join(",")}`}
                       entry={entry}
-                      onAdd={() => addToCart(entry)}
-                      onRemove={() => removeFromCart(entry.id)}
-                      onDelete={() => deleteFromCart(entry.id)}
+                      onAdd={() => addToCart(entry, entry.extras)}
+                      onRemove={() => removeEntry(entry)}
+                      onDelete={() => deleteEntry(entry)}
                     />
                   ))}
                 </div>
@@ -811,6 +980,19 @@ export function Catalog({
           )}
         </SheetContent>
       </Sheet>
+
+      {extrasStepCookie && (
+        <StoreExtraStep
+          cookie={extrasStepCookie}
+          storeName={storeName}
+          brandIcon={brandIcon}
+          options={extrasOptions}
+          selected={stepSelectedExtras}
+          onToggle={toggleStepExtra}
+          onBack={closeExtrasStep}
+          onConfirm={confirmExtrasAndAdd}
+        />
+      )}
     </div>
   );
 }

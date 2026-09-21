@@ -5,7 +5,7 @@ import type { StoreListItemDTO, StoreSettingsDTO } from "@/lib/types";
 
 // Lojas que devem manter o fundo branco original atrás do logo,
 // em vez da cor predominante extraída da imagem.
-const LOGO_BG_COLOR_EXCLUDED_SLUGS = ["lolocookies"];
+const LOGO_BG_COLOR_EXCLUDED_SLUGS = ["lolocookies", "saladadefrutas"];
 
 async function resolveLogoBgColor(slug: string, logoUrl: string | null): Promise<string | null> {
   if (!logoUrl || LOGO_BG_COLOR_EXCLUDED_SLUGS.includes(slug)) return null;
