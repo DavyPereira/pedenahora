@@ -1,4 +1,4 @@
-# 🍬 SweetOrder
+# 🍬 PedeNaHora
 
 <p align="center">
   <strong>Plataforma SaaS multi-tenant que dá a pequenos negócios um catálogo online pronto pra vender, com pedidos caindo direto no WhatsApp da loja.</strong>
@@ -16,7 +16,7 @@
 
 ## 📌 Sobre o projeto
 
-O **SweetOrder** é uma plataforma SaaS multi-tenant que dá a pequenos negócios
+O **PedeNaHora** é uma plataforma SaaS multi-tenant que dá a pequenos negócios
 (docerias, perfumarias, lojas de roupa, suplementos etc.) um catálogo online
 pronto pra vender, sem precisar de site próprio.
 
@@ -115,13 +115,13 @@ criar conta — termina com o pedido pronto pra enviar pelo WhatsApp da loja.
 Clone o repositório:
 
 ```bash
-git clone https://github.com/gabrielfel1x/sweetorder_app.git
+git clone https://github.com/DavyPereira/sweetorder_app.git
 ```
 
 Entre na pasta do projeto:
 
 ```bash
-cd sweetorder_app
+cd pedenahora
 ```
 
 Instale as dependências:
@@ -197,7 +197,7 @@ O projeto utiliza uma identidade visual baseada em:
 Desenvolvido por **Davy Braga**.
 
 <p>
-  <a href="https://github.com/gabrielfel1x">
-    <img src="https://img.shields.io/badge/GitHub-gabrielfel1x-181717?style=for-the-badge&logo=github">
+  <a href="https://github.com/DavyPereira">
+    <img src="https://img.shields.io/badge/GitHub-DavyPereira-181717?style=for-the-badge&logo=github">
   </a>
 </p>
