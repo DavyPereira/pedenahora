@@ -45,7 +45,7 @@ import type { BusinessHourDayDTO } from "@/lib/types";
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const HORIZONTAL_CARD_LAYOUT_SLUGS = ["lolocookies"];
+const HORIZONTAL_CARD_LAYOUT_SLUGS = ["lolocookies", "graficacriart"];
 const NATIONWIDE_SHIPPING_SLUGS: string[] = [];
 
 function CookieCard({

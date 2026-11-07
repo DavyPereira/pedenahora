@@ -49,14 +49,16 @@ type PaymentMethod = "pix" | "cash" | "card";
 type DeliveryMethod = "delivery" | "pickup";
 type Direction = "forward" | "back";
 
-// Retirada na loja: por enquanto só a Lolo Cookies oferece essa opção, com endereço fixo.
-const PICKUP_ENABLED_SLUGS = ["lolocookies"];
-const PICKUP_ADDRESS = {
-  street: "Rua Eufrásio Carneiro",
-  number: "201",
-  neighborhood: "Cruzeiro",
+// Retirada na loja: lista fixa por loja, cada uma com seu endereço de retirada.
+type PickupAddress = { street: string; number: string; neighborhood: string };
+const PICKUP_ADDRESSES: Record<string, PickupAddress> = {
+  lolocookies: {
+    street: "Rua Eufrásio Carneiro",
+    number: "201",
+    neighborhood: "Cruzeiro",
+  },
 };
-const PICKUP_ADDRESS_LINE = `${PICKUP_ADDRESS.street}, ${PICKUP_ADDRESS.number} - ${PICKUP_ADDRESS.neighborhood}`;
+const formatPickupAddress = (a: PickupAddress) => `${a.street}, ${a.number} - ${a.neighborhood}`;
 
 const addressSchema = z.object({
   cep: z
@@ -228,7 +230,9 @@ export function Checkout({
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [saving, startSaving] = useTransition();
 
-  const pickupAvailable = PICKUP_ENABLED_SLUGS.includes(slug);
+  const pickupAddress = PICKUP_ADDRESSES[slug] ?? null;
+  const pickupAvailable = pickupAddress !== null;
+  const pickupAddressLine = pickupAddress ? formatPickupAddress(pickupAddress) : "";
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(() => draft.deliveryMethod ?? "delivery");
   const isPickup = pickupAvailable && deliveryMethod === "pickup";
 
@@ -432,7 +436,7 @@ export function Checkout({
     };
 
     const endereco = isPickup
-      ? [`Retirada no local`, PICKUP_ADDRESS_LINE].join("\n")
+      ? [`Retirada no local`, pickupAddressLine].join("\n")
       : acceptsDelivery
         ? [
             `${effectiveAddress.street}, ${effectiveAddress.number}${effectiveAddress.complement ? `, ${effectiveAddress.complement}` : ""}`,
@@ -744,7 +748,7 @@ export function Checkout({
                     <span className="font-heading font-bold text-sm">Endereço para retirada</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    {PICKUP_ADDRESS_LINE}
+                    {pickupAddressLine}
                   </p>
                   <p className="mt-2 text-sm font-bold" style={{ color: "var(--primary)" }}>
                     ✓ Sem taxa de entrega
@@ -1257,10 +1261,10 @@ export function Checkout({
                     </button>
                   </div>
                   <p className="text-xs text-foreground font-semibold leading-snug">
-                    {PICKUP_ADDRESS.street}, {PICKUP_ADDRESS.number}
+                    {pickupAddress?.street}, {pickupAddress?.number}
                   </p>
                   <p className="text-xs text-muted-foreground leading-snug mt-0.5">
-                    {PICKUP_ADDRESS.neighborhood}
+                    {pickupAddress?.neighborhood}
                   </p>
                 </div>
               ) : acceptsDelivery ? (
