@@ -47,6 +47,24 @@ const fmt = (v: number) =>
 
 const HORIZONTAL_CARD_LAYOUT_SLUGS = ["lolocookies", "graficacriart"];
 const NATIONWIDE_SHIPPING_SLUGS: string[] = [];
+// Lojas que mostram, no topo do catálogo, o @ do Instagram (com link) logo abaixo
+// do nome e a descrição da loja como slogan, no lugar da frase genérica.
+const SOCIAL_HEADER_SLUGS = ["graficacriart"];
+
+function instagramHandle(url: string): string | null {
+  const match = url.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
+  return match ? `@${match[1]}` : null;
+}
+
+function InstagramGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" />
+    </svg>
+  );
+}
 
 function CookieCard({
   cookie,
@@ -499,6 +517,8 @@ export function Catalog({
   acceptsInstallments,
   logoUrl,
   logoBgColor,
+  storeDescription = "",
+  instagramUrl = "",
 }: {
   slug: string;
   products: CookieItem[];
@@ -510,6 +530,8 @@ export function Catalog({
   acceptsInstallments: boolean;
   logoUrl: string | null;
   logoBgColor: string | null;
+  storeDescription?: string;
+  instagramUrl?: string;
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("todos");
@@ -517,6 +539,8 @@ export function Catalog({
   const [hoursStatus, setHoursStatus] = useState<BusinessHoursStatus | null>(null);
   const [logoFailed, setLogoFailed] = useState(false);
   const router = useRouter();
+  const showSocialHeader = SOCIAL_HEADER_SLUGS.includes(slug);
+  const igHandle = instagramUrl ? instagramHandle(instagramUrl) : null;
   const storeIcon = useMemo(() => {
     const emoji = products[0]?.visual.emoji;
     if (emoji) {
@@ -693,11 +717,26 @@ export function Catalog({
               )}
             </h1>
 
+            {showSocialHeader && igHandle && (
+              <a
+                href={instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline underline-offset-4 animate-slide-up"
+                style={{ animationDelay: "0.08s", color: "var(--primary)" }}
+              >
+                <InstagramGlyph className="w-4 h-4 shrink-0" />
+                {igHandle}
+              </a>
+            )}
+
             <p
               className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed animate-slide-up"
               style={{ animationDelay: "0.1s" }}
             >
-              Escolha os produtos e receba certinho no seu endereço.
+              {showSocialHeader && storeDescription.trim()
+                ? storeDescription.trim()
+                : "Escolha os produtos e receba certinho no seu endereço."}
             </p>
           </div>
 

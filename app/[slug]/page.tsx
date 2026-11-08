@@ -26,6 +26,8 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
       acceptsInstallments={settings.acceptsInstallments}
       logoUrl={settings.logoUrl}
       logoBgColor={settings.logoBgColor}
+      storeDescription={settings.storeDescription}
+      instagramUrl={settings.instagramUrl}
     />
   );
 }
