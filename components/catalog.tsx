@@ -661,10 +661,11 @@ export function Catalog({
 
           <a
             href={`/${slug}/pedidos`}
-            className="hidden sm:flex items-center gap-2 rounded-full border border-border px-4 h-10 hover:bg-secondary hover:border-primary/30 transition-all"
+            aria-label="Meus pedidos"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-full border border-border w-10 sm:w-auto sm:px-4 h-10 hover:bg-secondary hover:border-primary/30 transition-all"
           >
             <Receipt className="w-4 h-4 text-foreground" />
-            <span className="font-heading text-sm font-semibold">Meus pedidos</span>
+            <span className="hidden sm:inline font-heading text-sm font-semibold">Meus pedidos</span>
           </a>
 
           <button
