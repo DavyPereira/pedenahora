@@ -57,6 +57,11 @@ const PICKUP_ADDRESSES: Record<string, PickupAddress> = {
     number: "201",
     neighborhood: "Cruzeiro",
   },
+  graficacriart: {
+    street: "Travessa Teixeira Bastos",
+    number: "39",
+    neighborhood: "Centro",
+  },
 };
 const formatPickupAddress = (a: PickupAddress) => `${a.street}, ${a.number} - ${a.neighborhood}`;
 
