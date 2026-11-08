@@ -56,6 +56,12 @@ function instagramHandle(url: string): string | null {
   return match ? `@${match[1]}` : null;
 }
 
+// Separa o slogan em frases ("Sua ideia, nosso papel." / "Mil possibilidades.")
+// para destacar a última na cor da loja.
+function splitSlogan(text: string): string[] {
+  return text.match(/[^.!?]+[.!?]*/g)?.map((p) => p.trim()).filter(Boolean) ?? [text];
+}
+
 function InstagramGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
@@ -717,27 +723,46 @@ export function Catalog({
               )}
             </h1>
 
+            {showSocialHeader && storeDescription.trim() ? (
+              <p
+                className="mt-2 font-heading text-base sm:text-lg font-semibold leading-snug tracking-tight text-foreground animate-slide-up"
+                style={{ animationDelay: "0.08s" }}
+              >
+                {splitSlogan(storeDescription.trim()).map((part, i, arr) => (
+                  <span
+                    key={i}
+                    style={i === arr.length - 1 && arr.length > 1 ? { color: "var(--primary)" } : undefined}
+                  >
+                    {part}
+                    {i < arr.length - 1 ? " " : ""}
+                  </span>
+                ))}
+              </p>
+            ) : (
+              <p
+                className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed animate-slide-up"
+                style={{ animationDelay: "0.1s" }}
+              >
+                Escolha os produtos e receba certinho no seu endereço.
+              </p>
+            )}
+
             {showSocialHeader && igHandle && (
               <a
                 href={instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline underline-offset-4 animate-slide-up"
-                style={{ animationDelay: "0.08s", color: "var(--primary)" }}
+                className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs sm:text-sm font-semibold transition-colors hover:bg-secondary animate-slide-up"
+                style={{
+                  animationDelay: "0.12s",
+                  color: "var(--primary)",
+                  borderColor: "color-mix(in srgb, var(--primary) 35%, transparent)",
+                }}
               >
                 <InstagramGlyph className="w-4 h-4 shrink-0" />
                 {igHandle}
               </a>
             )}
-
-            <p
-              className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed animate-slide-up"
-              style={{ animationDelay: "0.1s" }}
-            >
-              {showSocialHeader && storeDescription.trim()
-                ? storeDescription.trim()
-                : "Escolha os produtos e receba certinho no seu endereço."}
-            </p>
           </div>
 
           {logoUrl && !logoFailed && (
