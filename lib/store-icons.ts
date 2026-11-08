@@ -18,6 +18,7 @@ import {
   Package,
   Heart,
   PawPrint,
+  Printer,
   Leaf,
   Citrus,
   type LucideIcon,
@@ -43,6 +44,7 @@ export const STORE_ICONS = {
   Package,
   Heart,
   PawPrint,
+  Printer,
   Leaf,
   Citrus,
 } satisfies Record<string, LucideIcon>;
@@ -79,6 +81,7 @@ export const STORE_ICON_EMOJI = {
   PawPrint: "🐾",
   Leaf: "🌿",
   Citrus: "🍊",
+  Printer: "🖨️",
 } satisfies Record<StoreIconName, string>;
 
 export const STORE_ICON_EMOJI_PRESETS = {
@@ -103,6 +106,7 @@ export const STORE_ICON_EMOJI_PRESETS = {
   PawPrint: ["🐾", "🐶", "🐱", "🦴", "🐟", "🥩", "🧡", "🏠", "❤️"],
   Leaf: ["🌿", "💪", "🥑", "🍃", "💊", "🥤", "🌱", "⚡", "❤️"],
   Citrus: ["🍓", "🍌", "🍇", "🍍", "🥝", "🍊", "🍒", "🥭", "❤️"],
+  Printer: ["🖨️", "🎨", "📄", "🏷️", "📇", "🖼️", "✏️", "📦", "❤️"],
 } satisfies Record<StoreIconName, string[]>;
 
 export function getStoreEmoji(name: string | null | undefined): string {
