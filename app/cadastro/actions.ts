@@ -26,6 +26,9 @@ export async function createStoreForUser(
       store_description: "",
       slug,
       whatsapp_message_template: DEFAULT_WHATSAPP_TEMPLATE,
+      // Ícone neutro: o default do banco é "Cookie", que fazia toda loja nova
+      // herdar os emojis da Lolo Cookies até o dono trocar manualmente.
+      brand_icon: "Store",
     })
     .select("id")
     .single();

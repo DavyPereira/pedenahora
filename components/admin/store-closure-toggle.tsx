@@ -37,7 +37,7 @@ export function StoreClosureToggle({ initialClosedToday }: { initialClosedToday:
       <div className="flex items-center gap-3">
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white"
-          style={{ backgroundColor: closedToday ? "var(--destructive)" : "var(--brand-sage)" }}
+          style={{ backgroundColor: closedToday ? "var(--destructive)" : "var(--primary)" }}
         >
           {closedToday ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
         </div>
@@ -60,7 +60,7 @@ export function StoreClosureToggle({ initialClosedToday }: { initialClosedToday:
         className="shrink-0 h-10 px-4 rounded-full font-heading text-sm font-bold border-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
         style={
           closedToday
-            ? { borderColor: "var(--brand-sage)", color: "var(--brand-sage)" }
+            ? { borderColor: "var(--primary)", color: "var(--primary)" }
             : { borderColor: "var(--destructive)", color: "var(--destructive)" }
         }
       >

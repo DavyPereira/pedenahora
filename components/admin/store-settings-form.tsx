@@ -73,6 +73,10 @@ export function StoreSettingsForm({
       const firstInvalidField = Object.keys(errors)[0] as keyof SettingsFormData | undefined;
       const tab = firstInvalidField ? FIELD_TAB[firstInvalidField] : undefined;
       if (tab) setActiveTab(tab);
+      setSaved(false);
+      setServerError(
+        "Nada foi salvo (nem a logo): preencha os campos obrigatórios destacados em vermelho e salve de novo."
+      );
     }
   );
 

@@ -29,7 +29,7 @@ export default function NotFound() {
       </header>
 
       <main className="relative flex-1 flex flex-col items-center justify-center text-center gap-5 px-6 py-24">
-        <span className="text-7xl animate-pulse-soft select-none">🍪</span>
+        <span className="text-7xl animate-pulse-soft select-none">🔍</span>
         <h1 className="font-heading text-3xl sm:text-4xl font-black tracking-tight text-foreground">
           Página não encontrada
         </h1>
