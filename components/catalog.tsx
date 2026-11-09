@@ -15,6 +15,7 @@ import {
   Receipt,
   Truck,
   Check,
+  ZoomIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,11 +42,16 @@ import {
   type StoreExtraOption,
 } from "@/lib/order-extras";
 import type { BusinessHourDayDTO } from "@/lib/types";
+import { ProductImageZoom, type ZoomableProduct } from "@/components/product-image-zoom";
 
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const HORIZONTAL_CARD_LAYOUT_SLUGS = ["lolocookies", "graficacriart"];
+const HORIZONTAL_CARD_LAYOUT_SLUGS = ["lolocookies"];
+// Lojas com o card vertical (padrão), mas sempre 2 por linha — inclusive no celular.
+const TWO_COLUMN_GRID_SLUGS = ["graficacriart"];
+// Lojas em que tocar na foto do produto abre o visualizador com zoom.
+const IMAGE_ZOOM_SLUGS = ["graficacriart"];
 const NATIONWIDE_SHIPPING_SLUGS: string[] = [];
 // Lojas que mostram, no topo do catálogo, o @ do Instagram (com link) logo abaixo
 // do nome e a descrição da loja como slogan, no lugar da frase genérica.
@@ -80,6 +86,8 @@ function CookieCard({
   onRemove,
   disabled,
   acceptsInstallments,
+  compact = false,
+  onImageClick,
 }: {
   cookie: CookieItem;
   quantity: number;
@@ -88,6 +96,10 @@ function CookieCard({
   onRemove: () => void;
   disabled?: boolean;
   acceptsInstallments: boolean;
+  /** Versão mais enxuta para caber 2 por linha no celular. */
+  compact?: boolean;
+  /** Quando definido, tocar na foto chama isto (ex.: abrir o zoom). */
+  onImageClick?: () => void;
 }) {
   const isTracked = cookie.stockQuantity !== null;
   const isSoldOut = isTracked && cookie.stockQuantity! <= 0;
@@ -109,47 +121,64 @@ function CookieCard({
             src={cookie.imageUrl}
             alt={cookie.name}
             fill
-            sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            sizes={
+              compact
+                ? "(min-width: 768px) 384px, 50vw"
+                : "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            }
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
           />
         ) : (
-          <span className="text-7xl select-none transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-[-8deg] drop-shadow-md">
+          <span className={`${compact ? "text-5xl sm:text-7xl" : "text-7xl"} select-none transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-[-8deg] drop-shadow-md`}>
             {cookie.visual.emoji}
           </span>
         )}
 
         <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
+        {onImageClick && cookie.imageUrl && (
+          <button
+            type="button"
+            onClick={onImageClick}
+            aria-label={`Ampliar foto de ${cookie.name}`}
+            className="absolute inset-0 cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-primary"
+          >
+            <span className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/45 text-white flex items-center justify-center backdrop-blur-sm">
+              <ZoomIn className="w-4 h-4" />
+            </span>
+          </button>
+        )}
+
         {quantity > 0 && (
-          <div className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs font-heading font-bold px-2.5 py-1 rounded-full shadow-md">
+          <div className={`absolute ${compact ? "top-2 right-2 text-[11px] px-2" : "top-3 right-3 text-xs px-2.5"} bg-primary text-primary-foreground font-heading font-bold py-1 rounded-full shadow-md pointer-events-none`}>
             {quantity}× no carrinho
           </div>
         )}
 
         {isSoldOut && (
-          <div className="absolute top-3 left-3 bg-foreground/90 text-background text-xs font-heading font-bold px-2.5 py-1 rounded-full shadow-md">
+          <div className={`absolute ${compact ? "top-2 left-2 text-[11px] px-2" : "top-3 left-3 text-xs px-2.5"} bg-foreground/90 text-background font-heading font-bold py-1 rounded-full shadow-md pointer-events-none`}>
             Esgotado
           </div>
         )}
       </div>
 
-      <div className="flex flex-col flex-1 p-5 gap-3">
+      <div className={`flex flex-col flex-1 ${compact ? "p-3 gap-2 sm:p-5 sm:gap-3" : "p-5 gap-3"}`}>
         <div className="flex-1">
-          <h3 className="font-heading text-xl font-bold leading-tight tracking-tight text-foreground">
+          <h3 className={`font-heading ${compact ? "text-base sm:text-xl" : "text-xl"} font-bold leading-tight tracking-tight text-foreground`}>
             {cookie.name}
           </h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          <p className={compact ? "mt-1 text-xs sm:text-sm leading-relaxed text-muted-foreground line-clamp-3" : "mt-1.5 text-sm leading-relaxed text-muted-foreground"}>
             {cookie.description}
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
           <div>
-            <span className="font-heading text-2xl font-extrabold text-foreground tracking-tight">
+            <span className={`font-heading ${compact ? "text-lg sm:text-2xl" : "text-2xl"} font-extrabold text-foreground tracking-tight`}>
               {fmt(cookie.price)}
             </span>
             {acceptsInstallments && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <p className={compact ? "mt-0.5 text-[11px] sm:text-xs leading-snug text-muted-foreground" : "mt-0.5 text-xs text-muted-foreground"}>
                 Parcele no cartão, valor varia conforme as parcelas
               </p>
             )}
@@ -542,6 +571,7 @@ export function Catalog({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("todos");
   const [cartOpen, setCartOpen] = useState(false);
+  const [zoomProduct, setZoomProduct] = useState<ZoomableProduct | null>(null);
   const [hoursStatus, setHoursStatus] = useState<BusinessHoursStatus | null>(null);
   const [logoFailed, setLogoFailed] = useState(false);
   const router = useRouter();
@@ -619,6 +649,8 @@ export function Catalog({
 
   const getQty = (id: string) => cart.filter((i) => i.id === id).reduce((s, i) => s + i.quantity, 0);
   const horizontalCards = HORIZONTAL_CARD_LAYOUT_SLUGS.includes(slug);
+  const twoColumnGrid = TWO_COLUMN_GRID_SLUGS.includes(slug);
+  const imageZoom = IMAGE_ZOOM_SLUGS.includes(slug);
   const shipsNationwide = NATIONWIDE_SHIPPING_SLUGS.includes(slug);
 
   return (
@@ -915,7 +947,13 @@ export function Catalog({
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div
+            className={
+              twoColumnGrid
+                ? "grid grid-cols-2 gap-3 sm:gap-5 max-w-3xl mx-auto"
+                : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+            }
+          >
             {filtered.map((cookie, index) => (
               <CookieCard
                 key={cookie.id}
@@ -926,11 +964,32 @@ export function Catalog({
                 onRemove={() => removeFromCart(cookie.id)}
                 disabled={isClosed || (cookie.stockQuantity !== null && cookie.stockQuantity <= 0)}
                 acceptsInstallments={acceptsInstallments}
+                compact={twoColumnGrid}
+                onImageClick={
+                  imageZoom && cookie.imageUrl
+                    ? () =>
+                        setZoomProduct({
+                          name: cookie.name,
+                          description: cookie.description,
+                          imageUrl: cookie.imageUrl!,
+                          priceLabel: fmt(cookie.price),
+                        })
+                    : undefined
+                }
               />
             ))}
           </div>
         )}
       </main>
+
+      {imageZoom && (
+        <ProductImageZoom
+          product={zoomProduct}
+          onOpenChange={(open) => {
+            if (!open) setZoomProduct(null);
+          }}
+        />
+      )}
 
       <Sheet open={cartOpen} onOpenChange={setCartOpen}>
         <SheetContent side="right" className="w-full sm:max-w-[420px] flex flex-col p-0 gap-0 overflow-hidden">
