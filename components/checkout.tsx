@@ -442,6 +442,7 @@ export function Checkout({
 
     const message = renderWhatsAppTemplate(whatsappMessageTemplate, {
       loja: storeName,
+      cliente: (identity.name ?? "").trim(),
       itens,
       subtotal: fmt(cartTotalForPayment),
       entrega: isPickup ? "Retirada no local" : acceptsDelivery ? (effectiveDelivery === 0 ? "Grátis 🎉" : fmt(effectiveDelivery)) : "Retirada no local",

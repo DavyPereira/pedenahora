@@ -1,5 +1,6 @@
 export const ALLOWED_WHATSAPP_PLACEHOLDERS = [
   "loja",
+  "cliente",
   "itens",
   "subtotal",
   "entrega",
@@ -11,6 +12,8 @@ export const ALLOWED_WHATSAPP_PLACEHOLDERS = [
 export type WhatsAppPlaceholder = (typeof ALLOWED_WHATSAPP_PLACEHOLDERS)[number];
 
 export const DEFAULT_WHATSAPP_TEMPLATE = `*Novo Pedido: {{loja}}*
+
+*Cliente:* {{cliente}}
 
 *Itens do pedido:*
 {{itens}}
@@ -29,11 +32,23 @@ export function extractWhatsAppPlaceholders(template: string): string[] {
   return Array.from(matches, (m) => m[1]);
 }
 
+/**
+ * Modelos salvos antes do placeholder {{cliente}} existir não o contêm.
+ * Nesses casos o nome do cliente entra logo após a primeira linha (título).
+ */
+export function ensureClientePlaceholder(template: string): string {
+  if (extractWhatsAppPlaceholders(template).includes("cliente")) return template;
+  const clienteBlock = "*Cliente:* {{cliente}}";
+  const firstBreak = template.indexOf("\n");
+  if (firstBreak === -1) return `${template}\n\n${clienteBlock}`;
+  return `${template.slice(0, firstBreak)}\n\n${clienteBlock}${template.slice(firstBreak)}`;
+}
+
 export function renderWhatsAppTemplate(
   template: string,
   vars: Record<WhatsAppPlaceholder, string>
 ): string {
-  return template.replace(/\{\{\s*([a-zA-Z]+)\s*\}\}/g, (match, key: string) => {
+  return ensureClientePlaceholder(template).replace(/\{\{\s*([a-zA-Z]+)\s*\}\}/g, (match, key: string) => {
     return key in vars ? vars[key as WhatsAppPlaceholder] : match;
   });
 }
