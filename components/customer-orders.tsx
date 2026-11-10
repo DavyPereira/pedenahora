@@ -7,6 +7,7 @@ import { formatPhone } from "@/lib/phone";
 import { lookupOrdersAction } from "@/app/[slug]/checkout/actions";
 import { getStoreIcon } from "@/lib/store-icons";
 import type { OrderDTO } from "@/lib/orders";
+import { StoreLocationButton } from "@/components/store-location-modal";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -157,9 +158,12 @@ export function CustomerOrders({
                         </span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        <span>Retirada no local</span>
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <MapPin className="w-3.5 h-3.5 shrink-0" />
+                          <span>Retirada no local</span>
+                        </div>
+                        <StoreLocationButton slug={slug} storeName={storeName} variant="link" />
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">

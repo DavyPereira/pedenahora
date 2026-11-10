@@ -37,6 +37,8 @@ import type { CustomerLookupResult } from "@/lib/customers";
 import type { StoreSettingsDTO, BusinessHourDayDTO } from "@/lib/types";
 import type { CartEntry } from "@/lib/cart-context";
 import { getBusinessHoursStatus, type BusinessHoursStatus } from "@/lib/business-hours-status";
+import { formatPickupAddress, getPickupLocation } from "@/lib/pickup-locations";
+import { StoreLocationButton } from "@/components/store-location-modal";
 
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -49,21 +51,6 @@ type PaymentMethod = "pix" | "cash" | "card";
 type DeliveryMethod = "delivery" | "pickup";
 type Direction = "forward" | "back";
 
-// Retirada na loja: lista fixa por loja, cada uma com seu endereço de retirada.
-type PickupAddress = { street: string; number: string; neighborhood: string };
-const PICKUP_ADDRESSES: Record<string, PickupAddress> = {
-  lolocookies: {
-    street: "Rua Eufrásio Carneiro",
-    number: "201",
-    neighborhood: "Cruzeiro",
-  },
-  graficacriart: {
-    street: "Travessa Teixeira Bastos",
-    number: "39",
-    neighborhood: "Centro",
-  },
-};
-const formatPickupAddress = (a: PickupAddress) => `${a.street}, ${a.number} - ${a.neighborhood}`;
 
 const addressSchema = z.object({
   cep: z
@@ -235,7 +222,7 @@ export function Checkout({
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [saving, startSaving] = useTransition();
 
-  const pickupAddress = PICKUP_ADDRESSES[slug] ?? null;
+  const pickupAddress = getPickupLocation(slug);
   const pickupAvailable = pickupAddress !== null;
   const pickupAddressLine = pickupAddress ? formatPickupAddress(pickupAddress) : "";
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(() => draft.deliveryMethod ?? "delivery");
@@ -758,6 +745,7 @@ export function Checkout({
                   <p className="mt-2 text-sm font-bold" style={{ color: "var(--primary)" }}>
                     ✓ Sem taxa de entrega
                   </p>
+                  <StoreLocationButton slug={slug} storeName={storeName} />
                 </div>
 
                 <div className="mt-8">
@@ -1271,6 +1259,7 @@ export function Checkout({
                   <p className="text-xs text-muted-foreground leading-snug mt-0.5">
                     {pickupAddress?.neighborhood}
                   </p>
+                  <StoreLocationButton slug={slug} storeName={storeName} variant="link" />
                 </div>
               ) : acceptsDelivery ? (
                 <div className="bg-card border-2 border-border rounded-2xl p-4">
@@ -1304,6 +1293,7 @@ export function Checkout({
                   </div>
                   <p className="text-xs text-foreground font-semibold leading-snug">Retirada no local</p>
                   <p className="text-xs text-muted-foreground leading-snug mt-0.5">Combine o horário com a loja</p>
+                  <StoreLocationButton slug={slug} storeName={storeName} variant="link" />
                 </div>
               )}
 
