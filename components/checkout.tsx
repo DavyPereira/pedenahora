@@ -39,6 +39,8 @@ import type { CartEntry } from "@/lib/cart-context";
 import { getBusinessHoursStatus, type BusinessHoursStatus } from "@/lib/business-hours-status";
 import { formatPickupAddress, getPickupLocation } from "@/lib/pickup-locations";
 import { StoreLocationButton } from "@/components/store-location-modal";
+import { PixPayment } from "@/components/pix-payment";
+import { normalizePixKey } from "@/lib/pix";
 
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -1083,7 +1085,9 @@ export function Checkout({
                 <div>
                   <p className="font-heading font-bold text-sm mb-1">Como funciona o PIX</p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Após enviar o pedido pelo WhatsApp, o vendedor te manda o QR Code do PIX.
+                    {normalizePixKey(pixKey)
+                      ? "Na próxima tela você confere o pedido e já pode pagar pelo QR Code ou pelo Pix Copia e Cola."
+                      : "Após enviar o pedido pelo WhatsApp, o vendedor te manda o QR Code do PIX."}
                   </p>
                 </div>
               </div>
@@ -1362,6 +1366,15 @@ export function Checkout({
                 </span>
               </div>
             </div>
+
+            {payment === "pix" && acceptsPix && (
+              <PixPayment
+                pixKey={pixKey}
+                storeName={storeName}
+                city={pickupAddress?.city}
+                amount={displayOrderTotal}
+              />
+            )}
 
             {/* WhatsApp button */}
             <div className="mt-8">
